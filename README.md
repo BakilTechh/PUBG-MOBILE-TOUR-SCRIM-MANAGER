@@ -1,101 +1,136 @@
 ﻿# Sistem Manajemen Scrim / Tournament PUBG Mobile (PBO - Python)
 
-Program sederhana berbasis **Pemrograman Berorientasi Objek (PBO)** menggunakan
-Python untuk merepresentasikan manajemen pemain, tim (roster), dan tournament
-scrim PUBG Mobile.
+Program Python sederhana yang mensimulasikan sistem pemain, squad, dan scrim
+ala manajemen tim PUBG Mobile. Program ini dibuat untuk memenuhi tugas OOP
+(Object-Oriented Programming) di Python, mencakup materi Class & Object,
+Atribut & Method, serta Encapsulation & Property.
 
-## Cara Menjalankan
+## Daftar Isi
+- Struktur File
+- Penjelasan Class
+  1. Pemain
+  2. Squad
+  3. Scrim
+- Alur Program (main)
+- Panduan Pengujian
+- Kesesuaian dengan Syarat Tugas
 
+## Struktur File
+```
+.
+└── main.py   # Berisi semua class dan blok pengujian (if __name__ == "__main__")
+```
+
+## Penjelasan Class
+
+### 1. Pemain
+Cetak biru untuk satu pemain PUBG Mobile.
+
+| Anggota | Tipe | Keterangan |
+|---|---|---|
+| `total_pemain_terdaftar` | Atribut kelas (publik) | Menghitung total objek `Pemain` yang pernah dibuat |
+| `kategori_game`, `role_tersedia` | Atribut kelas (publik) | Data yang sama untuk semua pemain (nama game & daftar role yang tersedia) |
+| `nama_pemain`, `nomor_id`, `role` | Atribut instance | Diisi lewat `__init__`, unik untuk tiap pemain |
+| `__poin_performa` | Atribut instance (privat) | Poin performa pemain, hanya bisa diubah lewat property |
+
+Konstruktor `__init__(self, nama_pemain, nomor_id, role, poin_awal=0)` menyimpan
+data dasar pemain lalu mengisi `poin_performa` lewat setter (agar tetap
+tervalidasi sejak awal objek dibuat).
+
+Property `poin_performa` — getter mengembalikan `__poin_performa`; setter
+menolak nilai yang bukan angka atau negatif dengan `raise ValueError`.
+
+Instance method `catat_hasil_pertandingan(jumlah_kill, damage_total)`
+menghitung tambahan poin dari kombinasi kill dan damage, lalu menambahkannya
+ke poin performa yang sudah ada.
+
+Class method `buat_dari_data(cls, data)` adalah factory method: membangun
+objek `Pemain` langsung dari `dict` data pendaftaran.
+
+Static method `cek_format_id(nomor_id)` memvalidasi apakah ID pemain berupa
+string angka sepanjang 8–12 digit.
+
+### 2. Squad
+Mengelola kumpulan objek `Pemain` yang tergabung dalam satu tim.
+
+| Anggota | Tipe | Keterangan |
+|---|---|---|
+| `kapasitas_maksimal` | Atribut kelas | Batas maksimal anggota per squad (5), sama untuk semua objek `Squad` |
+| `total_squad_terdaftar`, `region_utama` | Atribut kelas | Data bersama lainnya |
+| `nama_squad`, `region`, `anggota` | Atribut instance | `anggota` adalah list berisi objek `Pemain` |
+| `__dana_operasional` | Atribut instance (privat) | Dana tim, hanya bisa diubah lewat property |
+
+`rekrut_pemain(self, pemain)` menambahkan objek `Pemain` ke `anggota` jika
+kapasitas masih tersedia; jika penuh, mencetak pesan penolakan.
+
+`tampilkan_anggota(self)` mencetak seluruh anggota squad beserta poin
+performa masing-masing.
+
+Property `dana_operasional` — setter menolak nilai negatif dengan
+`raise ValueError`, sama seperti pola pada `Pemain`.
+
+Class method `buat_dari_data(cls, data)` — factory method dari `dict`.
+
+Static method `hitung_rata_rata_poin(daftar_pemain)` menghitung rata-rata
+poin performa dari sekumpulan pemain (dipakai juga oleh class `Scrim` untuk
+mengurutkan peringkat).
+
+### 3. Scrim
+Merepresentasikan satu event scrim yang diikuti beberapa squad.
+
+| Anggota | Tipe | Keterangan |
+|---|---|---|
+| `penyelenggara`, `format_pertandingan` | Atribut kelas | Data bersama semua scrim |
+| `total_scrim_dijalankan` | Atribut kelas | Menghitung total objek `Scrim` yang pernah dibuat |
+| `judul_scrim`, `kuota_squad`, `daftar_squad_peserta` | Atribut instance | `daftar_squad_peserta` berisi objek `Squad` yang sudah diundang |
+| `__total_hadiah` | Atribut instance (privat) | Hadiah total, hanya bisa diubah lewat property |
+
+`undang_squad(self, squad)` mendaftarkan objek `Squad` ke scrim selama kuota
+masih tersedia.
+
+`tampilkan_papan_peringkat(self)` mengurutkan squad berdasarkan rata-rata
+poin performa anggotanya (memanggil `Squad.hitung_rata_rata_poin`), lalu
+mencetak peringkatnya.
+
+Property `total_hadiah` — setter menolak nilai negatif dengan
+`raise ValueError`.
+
+Class method `buat_dari_data(cls, data)` — factory method dari `dict`.
+
+Static method `format_rupiah(angka)` mengubah angka menjadi format mata uang
+Rupiah untuk ditampilkan di papan peringkat.
+
+## Alur Program (main)
+Blok `if __name__ == "__main__":` menjalankan skenario pengujian berurutan:
+
+1. **Membuat objek Pemain** — tiga pemain dibuat (dua lewat konstruktor
+   biasa, satu lewat `Pemain.buat_dari_data`), lalu salah satunya diuji
+   `catat_hasil_pertandingan()` dan dicek dengan `cek_format_id()`.
+2. **Membuat objek Squad** — dua squad dibuat, pemain-pemain di atas direkrut
+   ke dalamnya, lalu ditampilkan dan dihitung rata-rata poinnya.
+3. **Membuat objek Scrim** — dua scrim dibuat, kedua squad diundang ke salah
+   satunya, lalu papan peringkat ditampilkan.
+4. **Uji validasi setter** — `poin_performa`, `dana_operasional`, dan
+   `total_hadiah` masing-masing diisi nilai valid lalu nilai negatif, untuk
+   membuktikan `ValueError` benar-benar tertangkap dan data tidak berubah.
+
+## Panduan Pengujian
+
+**Cara menjalankan**
 ```bash
 python main.py
 ```
 
-Program akan langsung menjalankan demonstrasi (main code) di bagian bawah file:
-membuat beberapa objek, memanggil seluruh jenis method, lalu menguji validasi
-setter dengan data valid dan tidak valid.
-
----
-
-## Struktur Class
-
-Program terdiri dari 4 class yang saling berinteraksi (tanpa inheritance):
-
-```
-Pemain  ---->  RosterSlot  ---->  Tim  ---->  Tournament
-(dipakai)      (dipakai)          (dipakai)
-```
-
-- `RosterSlot` menyimpan sebuah objek `Pemain`.
-- `Tim` menyimpan banyak objek `RosterSlot` (roster).
-- `Tournament` menyimpan banyak objek `Tim` yang terdaftar.
-
-### 1. `Pemain`
-Merepresentasikan satu pemain PUBG Mobile.
-
-| Jenis | Nama | Keterangan |
-|---|---|---|
-| Atribut kelas | `total_pemain` | Menghitung total pemain yang pernah dibuat |
-| Atribut kelas (private) | `__base_rating` | Nilai dasar rating yang berlaku untuk semua pemain baru |
-| Atribut instance (public) | `nama` | Nama pemain |
-| Atribut instance (private) | `__rating` | Rating pemain, hanya bisa diakses lewat `property` |
-| Instance method | `__str__()` | Menampilkan nama & rating pemain |
-| Class method | `ubah_base_rating(cls, value)` | Mengubah `__base_rating` untuk semua pemain berikutnya |
-| Property (getter) | `rating` | Mengembalikan nilai `__rating` |
-| Property (setter) | `rating` | Menambah/mengurangi rating, **tidak boleh negatif** (ditahan di 0 dengan `max(0, ...)`) |
-
-### 2. `RosterSlot`
-Menghubungkan satu `Pemain` dengan jumlah pertandingan yang sudah dimainkan
-(mirip "stack" pada inventaris).
-
-| Jenis | Nama | Keterangan |
-|---|---|---|
-| Atribut instance (public) | `pemain` | Objek `Pemain` yang dipegang slot ini |
-| Atribut instance (private) | `__jumlah_main` | Jumlah match yang sudah dimainkan pemain di tim ini |
-| Instance method | `__str__()` | Menampilkan info pemain + jumlah main |
-| Property (getter/setter) | `jumlah_main` | Setter memakai `max(0, ...)` agar tidak pernah negatif |
-
-### 3. `Tim`
-Merepresentasikan satu tim/roster scrim.
-
-| Jenis | Nama | Keterangan |
-|---|---|---|
-| Atribut kelas | `max_slot` | Batas maksimal jumlah pemain dalam satu tim (5) |
-| Atribut instance (public) | `nama_tim`, `daftar_roster` | Nama tim dan daftar `RosterSlot` |
-| Atribut instance (private) | `__slot` | Salinan `max_slot` per objek tim |
-| Instance method | `tambah_roster()` | Menambahkan `RosterSlot`; jika penuh, mencetak peringatan |
-| Instance method | `hapus_pemain_nonaktif()` | Menghapus pemain yang jumlah mainnya 0 dari roster |
-| Instance method | `tampilkan_roster()` | Mencetak seluruh isi roster tim |
-
-### 4. `Tournament`
-Merepresentasikan satu event scrim/turnamen.
-
-| Jenis | Nama | Keterangan |
-|---|---|---|
-| Atribut instance (public) | `nama_tournament`, `daftar_tim` | Nama turnamen dan daftar tim yang terdaftar |
-| Atribut instance (private) | `__hadiah` | Total hadiah turnamen, hanya lewat `property` |
-| Instance method | `daftarkan_tim()` | Mendaftarkan objek `Tim` ke turnamen |
-| Property (getter/setter) | `hadiah` | Setter memakai `max(0, ...)` agar hadiah tidak pernah negatif |
-| Static method | `validasi_nama(nama)` | Mengecek nama turnamen tidak boleh mengandung angka |
-| Validasi di `__init__` | — | Jika `validasi_nama()` gagal, langsung `raise ValueError` |
-
----
-
-## Pemetaan ke Syarat Tugas
-
-| Syarat | Bukti di Kode |
-|---|---|
-| Minimal 3 class utama, tidak wajib inheritance | `Pemain`, `RosterSlot`, `Tim`, `Tournament` — berdiri sendiri, saling berinteraksi lewat objek |
-| Minimal 3 atribut kelas | `Pemain.total_pemain`, `Pemain.__base_rating`, `Tim.max_slot` |
-| Atribut instance lewat `__init__` + `self` | Semua atribut instance di tiap class (`self.nama`, `self.nama_tim`, dll) |
-| Atribut public & minimal 1 private | Public: `nama`, `nama_tim`, `nama_tournament`, `daftar_roster`, `daftar_tim`. Private: `__rating`, `__jumlah_main`, `__hadiah`, `__base_rating`, `__slot` |
-| Instance method | `tambah_roster()`, `hapus_pemain_nonaktif()`, `tampilkan_roster()`, `daftarkan_tim()`, `__str__()` |
-| Class method (`@classmethod`, pakai `cls`) | `Pemain.ubah_base_rating()` |
-| Static method (`@staticmethod`, tanpa `self`/`cls`) | `Tournament.validasi_nama()` |
-| `@property` sebagai getter | `rating`, `jumlah_main`, `hadiah` |
-| `@<nama>.setter` dengan nama fungsi sama persis | `@rating.setter`, `@jumlah_main.setter`, `@hadiah.setter` |
-| Validasi data di setter | Nilai negatif ditahan di 0 lewat `max(0, ...)`; nama turnamen dengan angka ditolak lewat `raise ValueError` di `__init__` |
-| Minimal 2 objek per class | `pemain1`, `pemain2`; `roster1`, `roster2` (Tim & Tournament didemonstrasikan 1 objek untuk fokus pada interaksi antar objek — tinggal duplikasi baris jika dosen ingin tegas 2 objek juga untuk `Tim`/`Tournament`) |
-| Panggil semua jenis method di main code | Instance, class, dan static method semuanya dipanggil di bagian `if __name__ == "__main__":` |
-| Uji setter valid vs tidak valid | Diuji untuk `rating`, `jumlah_main`, `hadiah`, plus uji `ValueError` saat membuat `Tournament` dengan nama mengandung angka |
-
----
+**Uji manual lain yang bisa dicoba**
+- Rekrut lebih dari 5 pemain ke satu squad, pastikan pesan "sudah mencapai
+  kapasitas maksimal" muncul saat anggota ke-6 ditambahkan.
+- Undang squad melebihi `kuota_squad` pada satu scrim, pastikan pesan
+  "Kuota scrim ... sudah penuh" muncul.
+- Isi `poin_performa` dengan tipe data selain angka (misal string), pastikan
+  `ValueError` juga tertangkap.
+4. **Getter, Setter, Validasi** — akses ke atribut private semuanya lewat
+   `@property` dan `@<nama>.setter` dengan nama fungsi yang sama persis;
+   setiap setter menolak input tidak valid dengan `raise ValueError`.
+5. **Pengujian** — di bagian main code dibuat minimal 2 objek per class,
+   seluruh jenis method dipanggil, dan setter diuji dengan data valid maupun
+   tidak valid.
