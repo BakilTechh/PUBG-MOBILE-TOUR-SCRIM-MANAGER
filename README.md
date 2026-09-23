@@ -99,11 +99,3 @@ Merepresentasikan satu event scrim/turnamen.
 | Uji setter valid vs tidak valid | Diuji untuk `rating`, `jumlah_main`, `hadiah`, plus uji `ValueError` saat membuat `Tournament` dengan nama mengandung angka |
 
 ---
-
-## Catatan
-
-- Tema program ("Sistem Manajemen Scrim/Tournament PUBG Mobile") perlu dikonfirmasi
-  dan disetujui aslab kelas terlebih dahulu sesuai ketentuan tugas.
-- Program ini sengaja dibuat ringkas (satu file `main.py`) sesuai kebutuhan,
-  tanpa sistem menu/CRUD interaktif, karena tugas hanya meminta pemenuhan
-  syarat class, atribut, method, dan validasi data — bukan aplikasi lengkap.
