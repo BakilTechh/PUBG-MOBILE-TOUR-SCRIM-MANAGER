@@ -1,18 +1,42 @@
-class Pemain:
-    total_pemain_terdaftar = 0
+# SISTEM MANAJEMEN SCRIM / TOURNAMENT PUBG MOBILE 
+class JadwalScrim:
+    """Class tambahan untuk mendemonstrasikan Komposisi pada class Scrim"""
+    def __init__(self, hari, jam):
+        self.hari = hari
+        self.jam = jam
+
+    def tampilkan_info(self):
+        print(f"Hari: {self.hari}, Jam: {self.jam}")
+
+
+# --- SUPERCLASS ---
+class Peserta:
+    total_terdaftar = 0
     kategori_game = "PUBG MOBILE"
-    role_tersedia = ("IGL", "Assaulter", "Support", "Sniper", "Flexer")
 
-    def __init__(self, nama_pemain, nomor_id, role, poin_awal=0):
-        self.nama_pemain = nama_pemain
-        self.nomor_id = nomor_id
+    def __init__(self, nama):
+        if not self.validasi_nama(nama):
+            raise ValueError("Nama tidak boleh mengandung angka")
+        self._nama = nama
+        Peserta.total_terdaftar += 1
+
+    @staticmethod
+    def validasi_nama(nama):
+        return isinstance(nama, str) and not any(char.isdigit() for char in nama)
+
+    def tampilkan_info(self):
+        print(f"Nama: {self._nama}")
+
+    def tampilkan_aksi(self):
+        print(f"Peserta {self._nama} bersiap di lobi.")
+
+
+# --- SUBCLASS 1 ---
+class Pemain(Peserta):
+    def __init__(self, nama, role, poin_awal=0):
+        super().__init__(nama)
         self.role = role
-        self.__poin_performa = 0
-        self.poin_performa = poin_awal
-        Pemain.total_pemain_terdaftar += 1
-
-    def __repr__(self):
-        return f"<Pemain {self.nama_pemain} | {self.role} | Poin: {self.__poin_performa}>"
+        self.__poin_performa = max(0, poin_awal)
 
     @property
     def poin_performa(self):
@@ -20,40 +44,37 @@ class Pemain:
 
     @poin_performa.setter
     def poin_performa(self, nilai):
-        if not isinstance(nilai, (int, float)):
-            raise ValueError(f"Poin performa harus berupa angka, diterima: {type(nilai).__name__}")
-        if nilai < 0:
-            raise ValueError("Poin performa tidak boleh bernilai negatif")
-        self.__poin_performa = nilai
+        # Nilai negatif akan tertahan di 0 (tidak mencetak error/ditolak)
+        self.__poin_performa = max(0, nilai)
 
-    def catat_hasil_pertandingan(self, jumlah_kill, damage_total):
-        tambahan = (jumlah_kill * 4) + (damage_total // 100)
-        self.poin_performa = self.__poin_performa + tambahan
-        print(f"[LOG] {self.nama_pemain} mencatat {jumlah_kill} kill & {damage_total} dmg "
-              f"-> poin performa naik jadi {self.__poin_performa}")
+    def tampilkan_info(self):
+        super().tampilkan_info()
+        print(f"Role: {self.role}")
+        print(f"Poin: {self.__poin_performa}")
 
+    def bertanding(self, poin_tambahan):
+        """Menambah poin pemain layaknya mengkonsumsi item."""
+        self.poin_performa = self.__poin_performa + poin_tambahan
+        print(f"Pemain {self._nama} mencetak kill, dan mendapatkan {poin_tambahan} poin")
+
+    def tampilkan_aksi(self):
+        """Override: Perilaku spesifik untuk pemain."""
+        print(f"Pemain {self._nama} ({self.role}) sedang bertanding di arena")
+        
     @classmethod
-    def buat_dari_data(cls, data: dict):
-        """Factory method: membangun objek Pemain langsung dari data pendaftaran (dictionary)."""
-        return cls(data["nama"], data["id"], data["role"], data.get("poin", 0))
-
-    @staticmethod
-    def cek_format_id(nomor_id):
-        """Utility: ID pemain harus string angka sepanjang 8-12 digit."""
-        return isinstance(nomor_id, str) and nomor_id.isdigit() and 8 <= len(nomor_id) <= 12
+    def dari_dict(cls, data: dict):
+        """Factory method: membuat objek Pemain langsung dari dictionary data pendaftaran."""
+        return cls(data["nama"], data["role"], data.get("poin", 0))
 
 
-class Squad:
-    total_squad_terdaftar = 0
+# --- SUBCLASS 2 ---
+class Squad(Peserta):
+    
     kapasitas_maksimal = 5
-    region_utama = "Asia Tenggara"
-
-    def __init__(self, nama_squad, region=None):
-        self.nama_squad = nama_squad
-        self.region = region if region else Squad.region_utama
-        self.anggota = []
+    def __init__(self, nama):
+        super().__init__(nama)
         self.__dana_operasional = 0
-        Squad.total_squad_terdaftar += 1
+        self.anggota = []
 
     @property
     def dana_operasional(self):
@@ -61,162 +82,126 @@ class Squad:
 
     @dana_operasional.setter
     def dana_operasional(self, nilai):
-        if not isinstance(nilai, (int, float)):
-            raise ValueError(f"Dana operasional harus berupa angka, diterima: {type(nilai).__name__}")
-        if nilai < 0:
-            raise ValueError("Dana operasional tidak boleh bernilai negatif")
-        self.__dana_operasional = nilai
+        self.__dana_operasional = max(0, nilai)
 
     def rekrut_pemain(self, pemain: Pemain):
         if len(self.anggota) >= Squad.kapasitas_maksimal:
-            print(f"[GAGAL] Squad {self.nama_squad} sudah mencapai kapasitas maksimal.")
-            return False
-        self.anggota.append(pemain)
-        print(f"[INFO] {pemain.nama_pemain} resmi bergabung ke squad {self.nama_squad}.")
-        return True
-
-    def tampilkan_anggota(self):
-        print(f"\nSquad: {self.nama_squad} ({self.region}) | Dana: {self.__dana_operasional}")
-        if not self.anggota:
-            print("  Belum ada anggota.")
-        for p in self.anggota:
-            print(" ", p)
-
-    @classmethod
-    def buat_dari_data(cls, data: dict):
-        """Factory method: membangun objek Squad dari dictionary."""
-        return cls(data["nama"], data.get("region"))
-
-    @staticmethod
-    def hitung_rata_rata_poin(daftar_pemain):
-        """Utility: menghitung rata-rata poin performa dari sekumpulan pemain."""
-        if not daftar_pemain:
-            return 0
-        total = sum(p.poin_performa for p in daftar_pemain)
-        return round(total / len(daftar_pemain), 2)
-
-
-class Scrim:
-    total_scrim_dijalankan = 0
-    penyelenggara = "Kampus Esports Arena"
-    format_pertandingan = "Squad TPP"
-
-    def __init__(self, judul_scrim, kuota_squad):
-        self.judul_scrim = judul_scrim
-        self.kuota_squad = kuota_squad
-        self.daftar_squad_peserta = []
-        self.__total_hadiah = 0
-        Scrim.total_scrim_dijalankan += 1
-
-    @property
-    def total_hadiah(self):
-        return self.__total_hadiah
-
-    @total_hadiah.setter
-    def total_hadiah(self, nilai):
-        if not isinstance(nilai, (int, float)):
-            raise ValueError(f"Total hadiah harus berupa angka, diterima: {type(nilai).__name__}")
-        if nilai < 0:
-            raise ValueError("Total hadiah tidak boleh bernilai negatif")
-        self.__total_hadiah = nilai
-
-    def undang_squad(self, squad: Squad):
-        if len(self.daftar_squad_peserta) >= self.kuota_squad:
-            print(f"[GAGAL] Kuota scrim {self.judul_scrim} sudah penuh.")
-            return False
-        self.daftar_squad_peserta.append(squad)
-        print(f"[INFO] Squad {squad.nama_squad} diundang ke {self.judul_scrim}.")
-        return True
-
-    def tampilkan_papan_peringkat(self):
-        print(f"\n=== PAPAN PERINGKAT {self.judul_scrim} | "
-              f"Hadiah: {self.format_rupiah(self.__total_hadiah)} ===")
-        if not self.daftar_squad_peserta:
-            print("  Belum ada squad yang bertanding.")
+            print(f"[GAGAL] Squad {self._nama} sudah mencapai kapasitas maksimal.")
             return
-        peringkat = sorted(
-            self.daftar_squad_peserta,
-            key=lambda s: Squad.hitung_rata_rata_poin(s.anggota),
-            reverse=True
-        )
-        for posisi, squad in enumerate(peringkat, start=1):
-            rata2 = Squad.hitung_rata_rata_poin(squad.anggota)
-            print(f"  #{posisi} {squad.nama_squad} - rata-rata poin: {rata2}")
+        self.anggota.append(pemain)
 
-    @classmethod
-    def buat_dari_data(cls, data: dict):
-        """Factory method: membangun objek Scrim dari dictionary."""
-        return cls(data["judul"], data["kuota"])
+    def hapus_pemain_poin_kosong(self):
+        self.anggota = [p for p in self.anggota if p.poin_performa > 0]
 
-    @staticmethod
-    def format_rupiah(angka):
-        """Utility: mengubah angka menjadi format mata uang Rupiah."""
-        return f"Rp{angka:,.0f}".replace(",", ".")
+    def tampilkan_isi(self):
+        for p in self.anggota:
+            p.tampilkan_info()
+
+    def tampilkan_aksi(self):
+        """Override: Perilaku spesifik untuk squad."""
+        print(f"Menurunkan Squad {self._nama} ke arena")
 
 
+# --- CLASS UTAMA 3 ---
+class Scrim:
+    def __init__(self, judul):
+        self.judul = judul
+        self.jadwal = JadwalScrim("Minggu", "19.00")
+        self.squad_unggulan = None                   
+
+    def pegang_squad(self, squad: Squad):
+        self.squad_unggulan = squad
+        print(f"{self.judul} memegang: {squad._nama}")
+
+    def lepas_squad(self):
+        self.squad_unggulan = None
+        print("Tidak ada squad yang dipegang")
+
+
+# PENGUJIAN PROGRAM
 if __name__ == "__main__":
-    print("========== DEMO SISTEM SCRIM PUBG MOBILE ==========")
+    
+    squad_btr = Squad("Bigetron Alpha")
+    pemain_ryzen = Pemain("Ryzen", "Rusher", 0)
+    pemain_zuxxy = Pemain("Zuxxy", "IGL", 50)
+    scrim_malam = Scrim("Scrim Malam Mingguan")
 
-    print("\n[1] Membuat objek Pemain")
-    pemain_a = Pemain("Baskara", "310045871", "IGL", 40)
-    pemain_b = Pemain("Ryzen", "310098234", "Sniper", 35)
-    pemain_c = Pemain.buat_dari_data({"nama": "Zuxxy", "id": "310077612", "role": "Assaulter", "poin": 30})
+    print("UJI METHOD OVERRIDING")
+    print("UJI CLASS METHOD")
+    pemain_dari_data = Pemain.dari_dict({"nama": "Rosemary", "role": "Sniper", "poin": 40})
+    print(f"Pemain berhasil dibuat lewat class method: {pemain_dari_data._nama}")
 
-    for p in (pemain_a, pemain_b, pemain_c):
-        print(" ", p)
+    print("\nUJI METHOD OVERRIDING")
+    squad_btr.tampilkan_aksi()
+    squad_btr.tampilkan_aksi()
+    pemain_ryzen.bertanding(50)
+    print(f"Poin {pemain_ryzen._nama} setelah bertanding: {pemain_ryzen.poin_performa}")
 
-    pemain_a.catat_hasil_pertandingan(jumlah_kill=6, damage_total=850)
+    print("\nUJI INSTANCE METHOD")
+    print("Daftar Anggota Sebelum:\n")
+    squad_btr.tampilkan_isi()
 
-    print(f"[KELAS] Total pemain terdaftar: {Pemain.total_pemain_terdaftar}")
-    print("Cek format ID '310045871':", Pemain.cek_format_id("310045871"))
-    print("Cek format ID 'ABC123':", Pemain.cek_format_id("ABC123"))
+    squad_btr.rekrut_pemain(pemain_ryzen)
+    print("Daftar Anggota Sesudah:")
+    squad_btr.tampilkan_isi()
+    print()
 
-    print("\n[2] Membuat objek Squad")
-    squad_x = Squad("Bigetron Alpha", "Asia Tenggara")
-    squad_y = Squad.buat_dari_data({"nama": "Aura Esports"})
+    squad_btr.rekrut_pemain(pemain_zuxxy)
+    print(f"Daftar Anggota Sesudah Ditambah Lagi ({pemain_zuxxy._nama}, formasi digabung):")
+    squad_btr.tampilkan_isi()
+    print()
 
-    squad_x.rekrut_pemain(pemain_a)
-    squad_x.rekrut_pemain(pemain_b)
-    squad_y.rekrut_pemain(pemain_c)
+    print("UJI ASOSIASI")
+    scrim_malam.pegang_squad(squad_btr)
+    squad_btr.tampilkan_aksi()
+    scrim_malam.lepas_squad()
 
-    squad_x.tampilkan_anggota()
-    squad_y.tampilkan_anggota()
+    print("\nUJI AGREGASI (Squad dihapus, Pemain tetap ada)")
+    pemain_microboy = Pemain("Microboy", "Support", 30)
+    squad_sementara = Squad("Evos Reborn")
+    squad_sementara.rekrut_pemain(pemain_microboy)
+    print("Squad berisi:")
+    squad_sementara.tampilkan_isi()
 
-    print("Rata-rata poin Garuda Prime:", Squad.hitung_rata_rata_poin(squad_x.anggota))
+    del squad_sementara
+    print("\nSquad dihapus. Pemain Microboy masih ada:")
+    pemain_microboy.tampilkan_info()
 
-    print("\n[3] Membuat objek Scrim")
-    scrim_1 = Scrim("Scrim Malam Mingguan", 4)
-    scrim_2 = Scrim.buat_dari_data({"judul": "Scrim Kualifikasi Kampus", "kuota": 8})
+    print("\nUJI KOMPOSISI (Scrim dihapus, Jadwal ikut hilang)")
+    scrim_kampus = Scrim("Scrim Kampus")
+    print(f"Jadwal milik {scrim_kampus.judul}:")
+    scrim_kampus.jadwal.tampilkan_info()
 
-    scrim_1.total_hadiah = 1_500_000
-    scrim_2.total_hadiah = 5_000_000
+    del scrim_kampus
+    print("\nScrim dihapus, Jadwal nya  juga akan ikut hilang ")
 
-    scrim_1.undang_squad(squad_x)
-    scrim_1.undang_squad(squad_y)
+    print("\nUJI SETTER")
+    squad_btr.dana_operasional = 100
+    pemain_ryzen.poin_performa = 6
+    print(f"Dana Operasional {squad_btr._nama} (Valid): {squad_btr.dana_operasional}")
+    print(f"Poin Performa {pemain_ryzen._nama} (Valid): {pemain_ryzen.poin_performa}")
 
-    scrim_1.tampilkan_papan_peringkat()
-    print(f"[KELAS] Penyelenggara: {Scrim.penyelenggara} | "
-          f"Total scrim dijalankan: {Scrim.total_scrim_dijalankan}")
+    squad_btr.dana_operasional = -500
+    pemain_ryzen.poin_performa = -10
+    print(f"Dana Operasional {squad_btr._nama} (Tidak Valid -500): {squad_btr.dana_operasional} (Tertahan di 0)")
+    print(f"Poin Performa {pemain_ryzen._nama} (Tidak Valid -10): {pemain_ryzen.poin_performa} (Tertahan di 0)")
 
-    print("\n[4] Uji Validasi Setter (data valid vs tidak valid)")
-    pemain_b.poin_performa = 60
-    print(f"Poin performa {pemain_b.nama_pemain} (valid): {pemain_b.poin_performa}")
+    print("\nUJI HAPUS ITEM (INSTANCE METHOD)")
+    pemain_ryzen.poin_performa = 0
+    print("Daftar Anggota Sebelum Dihapus:")
+    squad_btr.tampilkan_isi()
+
+    squad_btr.hapus_pemain_poin_kosong()
+
+    print("\nDaftar Anggota Sesudah Dihapus:")
+    squad_btr.tampilkan_isi()
+
+    print("\nUJI STATIC METHOD")
+    uji_nama = Peserta.validasi_nama("Kairi")
+    print(f"Hasil static method untuk 'Kairi': {uji_nama}")
+
+    print("Uji coba membuat peserta dengan angka (Kairikumar)...")
     try:
-        pemain_b.poin_performa = -25
+        pemain_error = Pemain("Kairikumar", "Support")
     except ValueError as e:
-        print(f"[DITOLAK] {e}")
-
-    squad_x.dana_operasional = 750_000
-    print(f"Dana operasional {squad_x.nama_squad} (valid): {squad_x.dana_operasional}")
-    try:
-        squad_x.dana_operasional = -100_000
-    except ValueError as e:
-        print(f"[DITOLAK] {e}")
-
-    try:
-        scrim_2.total_hadiah = -1
-    except ValueError as e:
-        print(f"[DITOLAK] {e}")
-    print(f"Total hadiah {scrim_2.judul_scrim} (tetap): {Scrim.format_rupiah(scrim_2.total_hadiah)}")
-
-    print("\n========== SELESAI ==========")
+        print(f"Error tertangkap: {e}")
