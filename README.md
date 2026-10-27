@@ -1,118 +1,157 @@
 ﻿# Sistem Manajemen Scrim / Tournament PUBG Mobile (PBO - Python)
 
-Program Python sederhana yang mensimulasikan sistem pemain, squad, dan scrim
-ala manajemen tim PUBG Mobile. Program ini dibuat untuk memenuhi tugas OOP
-(Object-Oriented Programming) di Python, mencakup materi Class & Object,
-Atribut & Method, serta Encapsulation & Property.
-
 ## Daftar Isi
-- Struktur File
+- Relasi UML
+- Inheritance
 - Penjelasan Class
-  1. Pemain
-  2. Squad
+  1. Peserta, Pemain, Squad
+  2. JadwalScrim
   3. Scrim
 - Alur Program (main)
 - Panduan Pengujian
-- Kesesuaian dengan Syarat Tugas
+- Kesimpulan
 
-## Struktur File
+## Relasi UML
+
 ```
-.
-└── main.py   # Berisi semua class dan blok pengujian (if __name__ == "__main__")
+Peserta <|-- Pemain
+Peserta <|-- Squad
+
+Squad  o--  Pemain        (AGREGASI)
+Scrim  *--  JadwalScrim    (KOMPOSISI)
+Scrim  --   Squad          (ASOSIASI)
+```
+
+### Agregasi
+Squad.anggota berisi objek Pemain yang dibuat di luar Squad, lalu
+direkrut lewat `rekrut_pemain()`. Objek Pemain tetap ada walau objek
+Squad-nya dihapus, karena dibuat terpisah dan tidak dimiliki secara
+eksklusif.
+
+Contoh:
+```python
+squad_sementara = Squad("Evos Reborn")
+squad_sementara.rekrut_pemain(pemain_microboy)
+
+del squad_sementara
+pemain_microboy.tampilkan_info()   # Pemain masih bisa dipakai
+```
+
+### Komposisi
+Scrim.jadwal adalah objek JadwalScrim yang dibuat otomatis di dalam
+`Scrim.__init__`. Objek ini tidak pernah dibuat terpisah dari Scrim
+pemiliknya, dan ikut lenyap begitu objek Scrim-nya dihapus.
+
+Contoh:
+```python
+scrim_kampus = Scrim("Scrim Kampus")
+scrim_kampus.jadwal.tampilkan_info()
+
+del scrim_kampus   # JadwalScrim ikut hilang bersama Scrim
+```
+
+### Asosiasi
+`Scrim.squad_unggulan` cuma referensi sementara ke objek `Squad yang sudah
+ada sebelumnya. Scrim tidak memiliki Squad itu secara eksklusif.
+
+Contoh:
+```python
+scrim_malam.pegang_squad(squad_btr)
+scrim_malam.lepas_squad()
+```
+
+## Inheritance
+Peserta menjadi superclass, diturunkan ke dua subclass: Pemain dan
+Squad. Keduanya memanggil `super().__init__(...)` di konstruktornya, dan
+masing-masing menambahkan atribut yang unik.
+
+Contoh:
+```python
+class Pemain(Peserta):
+    def __init__(self, nama, role, poin_awal=0):
+        super().__init__(nama)
+        self.role = role
+        self.__poin_performa = max(0, poin_awal)
+```
+
+Method `tampilkan_aksi()` di-override di kedua subclass dengan perilaku
+berbeda.
+
+Contoh:
+```python
+squad_btr.tampilkan_aksi()     # "Menurunkan Squad ... ke arena"
+pemain_ryzen.tampilkan_aksi()  # "Pemain ... sedang bertanding di arena"
+```
+
+`Peserta._nama` adalah atribut protected, diakses langsung oleh subclass
+tanpa lewat property.
+
+Contoh:
+```python
+print(f"Poin {pemain_ryzen._nama} setelah bertanding: ...")
 ```
 
 ## Penjelasan Class
 
-### 1. Pemain
-Cetak biru untuk satu pemain PUBG Mobile.
+### 1. Peserta, Pemain, Squad
+`Peserta` adalah cetak biru dasar untuk siapa pun yang terdaftar di scrim.
 
 | Anggota | Tipe | Keterangan |
 |---|---|---|
-| `total_pemain_terdaftar` | Atribut kelas (publik) | Menghitung total objek `Pemain` yang pernah dibuat |
-| `kategori_game`, `role_tersedia` | Atribut kelas (publik) | Data yang sama untuk semua pemain (nama game & daftar role yang tersedia) |
-| `nama_pemain`, `nomor_id`, `role` | Atribut instance | Diisi lewat `__init__`, unik untuk tiap pemain |
-| `__poin_performa` | Atribut instance (privat) | Poin performa pemain, hanya bisa diubah lewat property |
+| `total_terdaftar` | Atribut kelas (publik) | Menghitung total objek `Peserta` (termasuk subclass) yang pernah dibuat |
+| `kategori_game` | Atribut kelas (publik) | Nama game, sama untuk semua peserta |
+| `_nama` | Atribut instance (protected) | Divalidasi saat objek dibuat |
 
-Konstruktor `__init__(self, nama_pemain, nomor_id, role, poin_awal=0)` menyimpan
-data dasar pemain lalu mengisi `poin_performa` lewat setter (agar tetap
-tervalidasi sejak awal objek dibuat).
+Static method `validasi_nama()` memastikan nama tidak mengandung angka.
 
-Property `poin_performa` — getter mengembalikan `__poin_performa`; setter
-menolak nilai yang bukan angka atau negatif dengan `raise ValueError`.
+Contoh:
+```python
+Peserta.validasi_nama("Kairi")   # True
+```
 
-Instance method `catat_hasil_pertandingan(jumlah_kill, damage_total)`
-menghitung tambahan poin dari kombinasi kill dan damage, lalu menambahkannya
-ke poin performa yang sudah ada.
+`Pemain(Peserta)` menambahkan `role` dan `__poin_performa` (privat, lewat
+property). Class method `dari_dict()` adalah factory method: membangun
+objek `Pemain` langsung dari dictionary.
 
-Class method `buat_dari_data(cls, data)` adalah factory method: membangun
-objek `Pemain` langsung dari `dict` data pendaftaran.
+Contoh:
+```python
+pemain_dari_data = Pemain.dari_dict({"nama": "Kiboy", "role": "Sniper", "poin": 40})
+```
 
-Static method `cek_format_id(nomor_id)` memvalidasi apakah ID pemain berupa
-string angka sepanjang 8–12 digit.
+`Squad(Peserta)` menambahkan `kapasitas_maksimal` (atribut kelas),
+`__dana_operasional` (privat, lewat property), dan `anggota` (list berisi
+objek `Pemain`).
 
-### 2. Squad
-Mengelola kumpulan objek `Pemain` yang tergabung dalam satu tim.
+Contoh:
+```python
+squad_btr.rekrut_pemain(pemain_ryzen)
+squad_btr.hapus_pemain_poin_kosong()
+```
 
-| Anggota | Tipe | Keterangan |
-|---|---|---|
-| `kapasitas_maksimal` | Atribut kelas | Batas maksimal anggota per squad (5), sama untuk semua objek `Squad` |
-| `total_squad_terdaftar`, `region_utama` | Atribut kelas | Data bersama lainnya |
-| `nama_squad`, `region`, `anggota` | Atribut instance | `anggota` adalah list berisi objek `Pemain` |
-| `__dana_operasional` | Atribut instance (privat) | Dana tim, hanya bisa diubah lewat property |
+### 2. JadwalScrim
+Komponen internal milik `Scrim` — menyimpan hari dan jam pelaksanaan scrim.
 
-`rekrut_pemain(self, pemain)` menambahkan objek `Pemain` ke `anggota` jika
-kapasitas masih tersedia; jika penuh, mencetak pesan penolakan.
-
-`tampilkan_anggota(self)` mencetak seluruh anggota squad beserta poin
-performa masing-masing.
-
-Property `dana_operasional` — setter menolak nilai negatif dengan
-`raise ValueError`, sama seperti pola pada `Pemain`.
-
-Class method `buat_dari_data(cls, data)` — factory method dari `dict`.
-
-Static method `hitung_rata_rata_poin(daftar_pemain)` menghitung rata-rata
-poin performa dari sekumpulan pemain (dipakai juga oleh class `Scrim` untuk
-mengurutkan peringkat).
+Contoh:
+```python
+jadwal = JadwalScrim("Minggu", "19.00")
+jadwal.tampilkan_info()
+```
 
 ### 3. Scrim
-Merepresentasikan satu event scrim yang diikuti beberapa squad.
+Merepresentasikan satu event scrim, menyimpan jadwalnya sendiri dan bisa
+memegang referensi ke satu squad unggulan.
 
-| Anggota | Tipe | Keterangan |
-|---|---|---|
-| `penyelenggara`, `format_pertandingan` | Atribut kelas | Data bersama semua scrim |
-| `total_scrim_dijalankan` | Atribut kelas | Menghitung total objek `Scrim` yang pernah dibuat |
-| `judul_scrim`, `kuota_squad`, `daftar_squad_peserta` | Atribut instance | `daftar_squad_peserta` berisi objek `Squad` yang sudah diundang |
-| `__total_hadiah` | Atribut instance (privat) | Hadiah total, hanya bisa diubah lewat property |
-
-`undang_squad(self, squad)` mendaftarkan objek `Squad` ke scrim selama kuota
-masih tersedia.
-
-`tampilkan_papan_peringkat(self)` mengurutkan squad berdasarkan rata-rata
-poin performa anggotanya (memanggil `Squad.hitung_rata_rata_poin`), lalu
-mencetak peringkatnya.
-
-Property `total_hadiah` — setter menolak nilai negatif dengan
-`raise ValueError`.
-
-Class method `buat_dari_data(cls, data)` — factory method dari `dict`.
-
-Static method `format_rupiah(angka)` mengubah angka menjadi format mata uang
-Rupiah untuk ditampilkan di papan peringkat.
+Contoh:
+```python
+scrim_malam = Scrim("Scrim Malam Mingguan")
+```
 
 ## Alur Program (main)
 Blok `if __name__ == "__main__":` menjalankan skenario pengujian berurutan:
-
-1. **Membuat objek Pemain** — tiga pemain dibuat (dua lewat konstruktor
-   biasa, satu lewat `Pemain.buat_dari_data`), lalu salah satunya diuji
-   `catat_hasil_pertandingan()` dan dicek dengan `cek_format_id()`.
-2. **Membuat objek Squad** — dua squad dibuat, pemain-pemain di atas direkrut
-   ke dalamnya, lalu ditampilkan dan dihitung rata-rata poinnya.
-3. **Membuat objek Scrim** — dua scrim dibuat, kedua squad diundang ke salah
-   satunya, lalu papan peringkat ditampilkan.
-4. **Uji validasi setter** — `poin_performa`, `dana_operasional`, dan
-   `total_hadiah` masing-masing diisi nilai valid lalu nilai negatif, untuk
-   membuktikan `ValueError` benar-benar tertangkap dan data tidak berubah.
+uji class method, uji method overriding, uji instance method (rekrut
+pemain), uji asosiasi, uji agregasi, uji komposisi, uji setter (data valid
+dan tidak valid), uji hapus item, dan uji static method (termasuk
+menangkap `ValueError` saat nama mengandung angka).
 
 ## Panduan Pengujian
 
@@ -120,17 +159,22 @@ Blok `if __name__ == "__main__":` menjalankan skenario pengujian berurutan:
 ```bash
 python main.py
 ```
+Menggunakan Python standar (3.10+) tanpa modul eksternal.
 
 **Uji manual lain yang bisa dicoba**
-- Rekrut lebih dari 5 pemain ke satu squad, pastikan pesan "sudah mencapai
-  kapasitas maksimal" muncul saat anggota ke-6 ditambahkan.
-- Undang squad melebihi `kuota_squad` pada satu scrim, pastikan pesan
-  "Kuota scrim ... sudah penuh" muncul.
-- Isi `poin_performa` dengan tipe data selain angka (misal string), pastikan
-  `ValueError` juga tertangkap.
-4. **Getter, Setter, Validasi** — akses ke atribut private semuanya lewat
-   `@property` dan `@<nama>.setter` dengan nama fungsi yang sama persis;
-   setiap setter menolak input tidak valid dengan `raise ValueError`.
-5. **Pengujian** — di bagian main code dibuat minimal 2 objek per class,
-   seluruh jenis method dipanggil, dan setter diuji dengan data valid maupun
-   tidak valid.
+- Rekrut lebih dari `Squad.kapasitas_maksimal` (5) pemain ke satu squad,
+  pastikan pesan "sudah mencapai kapasitas maksimal" muncul saat anggota
+  ke-6 ditambahkan.
+- Buat objek Pemain dan Squad lalu bandingkan hasil `tampilkan_aksi()`
+  keduanya untuk melihat perbedaan override secara langsung.
+
+## Kesimpulan
+Program ini menunjukkan bagaimana `Peserta` sebagai superclass diturunkan
+ke Pemain dan Squad dengan method yang di-override berbeda, bagaimana
+atribut privat diakses lewat `@property` dengan validasi di setiap setter,
+serta bagaimana ketiga relasi UML (asosiasi, agregasi, komposisi) berbeda
+perilakunya saat objek pemiliknya dihapus — Pemain pada relasi agregasi
+tetap hidup, sedangkan JadwalScrim pada relasi komposisi ikut lenyap
+bersama Scrim yang memilikinya. Seluruh class method, instance method, dan
+static method yang diwajibkan sudah diuji di bagian main code, lengkap
+dengan pengujian data valid maupun tidak valid pada setiap setter.
