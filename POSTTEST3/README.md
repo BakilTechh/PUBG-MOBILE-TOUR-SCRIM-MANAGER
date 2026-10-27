@@ -13,8 +13,6 @@ Program Python sederhana untuk mengelola peserta, pemain, squad, dan jadwal scri
   3. [Scrim](#3-scrim)
 - [Prinsip SOLID (Nilai Plus)](#prinsip-solid-nilai-plus)
 - [Panduan Pengujian](#panduan-pengujian)
-- [Screenshot Output Program](#screenshot-output-program)
-- [Kesimpulan](#kesimpulan)
 - [Alur Program (main)](#alur-program-main)
 
 ## Relasi UML
