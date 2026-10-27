@@ -168,10 +168,52 @@ Menggunakan Python standar (3.10+) tanpa modul eksternal.
 - Buat objek Pemain dan Squad lalu bandingkan hasil `tampilkan_aksi()`
   keduanya untuk melihat perbedaan override secara langsung.
 
-## Kesimpulan
-Program ini menunjukkan bagaimana `Peserta` sebagai superclass diturunkan
-ke Pemain dan Squad dengan method yang di-override berbeda, bagaimana
-atribut privat diakses lewat `@property` dengan validasi di setiap setter,
+## Relasi UML (Class Diagram)
+
+![Class Diagram Sistem Scrim PUBG Mobile](assets/class_diagram.png)
+
+Class diagram di atas menggambarkan struktur program Manajemen Scrim PUBG Mobile. Diagram menunjukkan lima class utama beserta atribut, method, dan hubungan antarkelas yang digunakan dalam penerapan Object-Oriented Programming (OOP) di Python.
+
+### Nama Class, Atribut, dan Method Utama
+
+| Class | Keterangan | Atribut Utama | Method Utama |
+|---|---|---|---|
+| `Peserta` *(abstract)* | Class induk untuk Pemain dan Squad | `total_terdaftar`, `kategori_game`, `_nama` | `validasi_nama()`, `tampilkan_info()`, `jalankan()`, `tampilkan_aksi()`, `hitung_skor()` |
+| `Pemain` | Merepresentasikan seorang pemain scrim | `role`, `__poin_performa` | `bertanding()`, `tampilkan_aksi()`, `hitung_skor()`, `dari_dict()` |
+| `Squad` | Merepresentasikan tim yang terdiri dari beberapa pemain | `kapasitas_maksimal`, `anggota`, `__dana_operasional` | `rekrut_pemain()`, `hapus_pemain_poin_kosong()`, `tampilkan_aksi()`, `hitung_skor()` |
+| `Scrim` | Merepresentasikan event scrim yang memiliki jadwal dan dapat memegang sebuah squad | `judul`, `jadwal`, `squad_unggulan` | `pegang_squad()`, `lepas_squad()`, `tampilkan_peringkat()`, `tampilkan_info()` |
+| `JadwalScrim` | Menyimpan informasi hari dan jam pelaksanaan scrim | `hari`, `jam` | `tampilkan_info()` |
+
+### Simbol dan Garis Relasi UML
+
+| Simbol | Jenis Relasi | Penjelasan |
+|---|---|---|
+| Segitiga kosong (▷) | **Inheritance (Pewarisan)** | `Pemain` dan `Squad` mewarisi atribut serta method dari class induk `Peserta`. Ujung segitiga mengarah ke class induk. |
+| Belah ketupat kosong (◇) | **Aggregation (Agregasi)** | `Squad` berisi objek `Pemain` melalui atribut `anggota`. Objek pemain dibuat secara terpisah sehingga tetap dapat digunakan meskipun objek squad dihapus. |
+| Belah ketupat penuh (◆) | **Composition (Komposisi)** | `Scrim` memiliki objek `JadwalScrim` yang dibuat di dalam konstruktor `Scrim`. Jadwal merupakan bagian dari siklus hidup objek scrim tersebut. |
+| Panah terbuka (→) | **Association (Asosiasi)** | `Scrim` berhubungan dengan `Squad` melalui atribut `squad_unggulan`. Scrim hanya menyimpan referensi ke squad yang sudah ada, bukan membuat atau memiliki squad tersebut. |
+
+### Cara Membaca Atribut dan Method
+
+Simbol di depan atribut atau method menunjukkan tingkat aksesnya:
+
+| Simbol | Arti |
+|---|---|
+| `+` | **Public** — dapat diakses dari luar class. |
+| `-` | **Private** — ditujukan untuk penggunaan internal class. |
+| `#` | **Protected** — ditujukan untuk digunakan oleh class itu sendiri dan class turunannya. |
+| Nama class miring atau keterangan `«abstract»` | Menandakan abstract class yang tidak dapat diinstansiasi secara langsung. |
+
+### Penjelasan Jumlah Objek pada Relasi
+
+Angka atau multiplicity di dekat ujung garis menunjukkan jumlah objek yang dapat berhubungan:
+
+- **Squad–Pemain (Agregasi):** satu squad dapat memiliki 0 sampai 5 pemain sesuai `kapasitas_maksimal`. Pemain dibuat di luar squad sehingga siklus hidupnya tidak bergantung pada squad.
+- **Scrim–Squad (Asosiasi):** satu scrim dapat memegang 0 atau 1 squad melalui `squad_unggulan`. Satu squad dapat dirujuk oleh banyak scrim.
+- **Scrim–JadwalScrim (Komposisi):** setiap scrim memiliki tepat 1 objek `JadwalScrim` yang dibuat di dalam class `Scrim`.
+
+Diagram ini menampilkan hubungan utama dalam program, yaitu **inheritance, aggregation, composition, dan association**. Setiap hubungan memiliki fungsi berbeda sesuai dengan cara objek dibuat, dimiliki, dan digunakan oleh class lainnya.
+
 serta bagaimana ketiga relasi UML (asosiasi, agregasi, komposisi) berbeda
 perilakunya saat objek pemiliknya dihapus — Pemain pada relasi agregasi
 tetap hidup, sedangkan JadwalScrim pada relasi komposisi ikut lenyap
