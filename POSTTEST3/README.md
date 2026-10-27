@@ -1,7 +1,5 @@
 # Sistem Manajemen Scrim / Tournament PUBG Mobile (PBO - Python)
 
-Program Python sederhana untuk mengelola peserta, pemain, squad, dan jadwal scrim PUBG Mobile. Proyek ini dibuat untuk memenuhi tugas PBO dengan menerapkan class dan object, encapsulation, inheritance, abstraksi, polimorfisme, serta relasi UML.
-
 ## Daftar Isi
 
 - [Relasi UML](#relasi-uml)
